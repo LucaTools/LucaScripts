@@ -51,6 +51,28 @@ update_path() {
         # echo "$TOOL_NAME: Added $tool_bin_dir to PATH"
         ;;
     esac
+  else
+    # If the directory doesn't exist, remove any stale tool entries from PATH
+    if [[ ":$PATH:" == *"/$TOOL_FOLDER/active:"* ]]; then
+      local p
+      local new_path=""
+      local current_path="$PATH"
+      
+      while [ -n "$current_path" ]; do
+        p="${current_path%%:*}"
+        
+        if [ "$current_path" = "$p" ]; then
+            current_path=""
+        else
+            current_path="${current_path#*:}"
+        fi
+
+        if [[ "$p" != *"/$TOOL_FOLDER/active" ]]; then
+          new_path="${new_path:+$new_path:}$p"
+        fi
+      done
+      export PATH="$new_path"
+    fi
   fi
 }
 

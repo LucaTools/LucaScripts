@@ -32,11 +32,13 @@ TOOL_FOLDER=".luca"
 
 # This function adds tool_bin_dir to PATH if it exists and isn't already there.
 # It is designed to be idempotent and prevent PATH duplication.
+# When navigating to subdirectories of a project, it keeps the project's tool path in PATH.
 update_path() {
   # Look for the active tools directory in the current location
   local tool_bin_dir="$(pwd)/$TOOL_FOLDER/active"
+  local current_pwd="$(pwd)"
 
-  # Only proceed if the tool directory exists
+  # Only proceed if the tool directory exists in the current directory
   if [ -d "$tool_bin_dir" ]; then
     # Check if tool_bin_dir is already in PATH to avoid duplicates
     case ":$PATH:" in
@@ -52,7 +54,8 @@ update_path() {
         ;;
     esac
   else
-    # If the directory doesn't exist, remove any stale tool entries from PATH
+    # Current directory doesn't have .luca/active
+    # Check if there are any .luca/active entries in PATH that should be cleaned up
     if [[ ":$PATH:" == *"/$TOOL_FOLDER/active:"* ]]; then
       local p
       local new_path=""
@@ -67,7 +70,17 @@ update_path() {
             current_path="${current_path#*:}"
         fi
 
-        if [[ "$p" != *"/$TOOL_FOLDER/active" ]]; then
+        if [[ "$p" == *"/$TOOL_FOLDER/active" ]]; then
+          # This is a tool directory entry - check if we should keep it
+          # Get the project root (parent of .luca/active)
+          local project_root="${p%/$TOOL_FOLDER/active}"
+          # Keep this entry if current directory is the project root or a subdirectory of it
+          if [[ "$current_pwd" == "$project_root" || "$current_pwd" == "$project_root/"* ]]; then
+            new_path="${new_path:+$new_path:}$p"
+          fi
+          # Otherwise, skip this entry (effectively removing it from PATH)
+        else
+          # Not a tool directory, keep it in PATH
           new_path="${new_path:+$new_path:}$p"
         fi
       done

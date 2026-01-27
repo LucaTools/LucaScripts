@@ -153,21 +153,4 @@ else
     exit 1
 fi
 
-# =============================================================================
-# PATH UPDATE
-# =============================================================================
-
-# Source the shell hook to update PATH for the new tools
-SHELL_HOOK_PATH="$HOME/$TOOL_FOLDER/shell_hook.sh"
-
-if [ -f "$SHELL_HOOK_PATH" ]; then
-    # Note: In a git hook, we can't directly update the parent shell's PATH.
-    # The PATH will be updated when the user's next prompt is displayed
-    # (handled by the shell hook's precmd/PROMPT_COMMAND integration).
-    log_info "Tools installed. PATH will update on next prompt."
-else
-    SHELL_RC=$(get_shell_rc_file)
-    log_info "To update PATH, run: source $SHELL_RC"
-fi
-
 exit 0

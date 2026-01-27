@@ -1,0 +1,156 @@
+#!/bin/sh
+
+# =============================================================================
+# LUCA POST-CHECKOUT GIT HOOK
+# =============================================================================
+#
+# This hook script runs after a git checkout or git switch command.
+# It ensures that CLI tools are synchronized with the Lucafile specification
+# after switching branches or checking out commits.
+#
+# Git passes three arguments to this hook:
+#   $1 = ref of the previous HEAD
+#   $2 = ref of the new HEAD
+#   $3 = flag indicating checkout type:
+#        1 = branch checkout (git checkout <branch>, git switch <branch>)
+#        0 = file checkout (git checkout -- <file>)
+#
+# Installation:
+#   Copy this file to .git/hooks/post-checkout in your repository
+#   Or install Luca with the install.sh script
+#
+# =============================================================================
+
+# Configuration
+TOOL_NAME="Luca"
+TOOL_FOLDER=".luca"
+LUCAFILE="Lucafile"
+INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/HEAD/install.sh"
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+# Print a message with Luca prefix
+log_info() {
+    echo "[$TOOL_NAME] $1"
+}
+
+log_success() {
+    echo "[$TOOL_NAME] ✅ $1"
+}
+
+log_warning() {
+    echo "[$TOOL_NAME] ⚠️  $1"
+}
+
+log_error() {
+    echo "[$TOOL_NAME] ❌ $1"
+}
+
+# Detect the user's shell RC file for sourcing
+get_shell_rc_file() {
+    case "$SHELL" in
+        */bash)
+            echo "$HOME/.bashrc"
+            ;;
+        */zsh)
+            echo "$HOME/.zshrc"
+            ;;
+        *)
+            # Default to bashrc if shell detection fails
+            echo "$HOME/.bashrc"
+            ;;
+    esac
+}
+
+# Check if luca command is available
+is_luca_installed() {
+    command -v luca >/dev/null 2>&1
+}
+
+# =============================================================================
+# MAIN HOOK LOGIC
+# =============================================================================
+
+# Get the checkout type flag (third argument)
+CHECKOUT_TYPE="${3:-0}"
+
+# Only run on branch checkouts, not file checkouts
+if [ "$CHECKOUT_TYPE" != "1" ]; then
+    # File checkout, skip processing
+    exit 0
+fi
+
+# Get the refs for logging (optional)
+PREV_HEAD="$1"
+NEW_HEAD="$2"
+
+log_info "Branch checkout detected"
+
+# Check if Lucafile exists in the repository root
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$REPO_ROOT" ]; then
+    log_warning "Could not determine repository root"
+    exit 0
+fi
+
+LUCAFILE_PATH="$REPO_ROOT/$LUCAFILE"
+
+# Only proceed if Lucafile exists
+if [ ! -f "$LUCAFILE_PATH" ]; then
+    # No Lucafile in this repository, nothing to do
+    exit 0
+fi
+
+log_info "Found $LUCAFILE, synchronizing tools..."
+
+# =============================================================================
+# LUCA INSTALLATION CHECK
+# =============================================================================
+
+# Check if Luca is installed, install if not
+if ! is_luca_installed; then
+    log_info "Luca not found, installing..."
+    
+    if command -v curl >/dev/null 2>&1; then
+        /bin/bash -c "$(curl -fsSL $INSTALL_SCRIPT_URL)"
+        INSTALL_RESULT=$?
+        
+        if [ $INSTALL_RESULT -ne 0 ]; then
+            log_error "Failed to install Luca"
+            exit 1
+        fi
+        
+        log_success "Luca installed"
+    else
+        log_error "curl is required to install Luca"
+        exit 1
+    fi
+fi
+
+# =============================================================================
+# TOOL INSTALLATION FROM LUCAFILE
+# =============================================================================
+
+log_info "Installing CLI tools from $LUCAFILE..."
+
+# Change to repo root to ensure correct context
+cd "$REPO_ROOT" || exit 1
+
+# Install tools specified in Lucafile
+if is_luca_installed; then
+    luca install --quiet --spec "$LUCAFILE"
+    INSTALL_RESULT=$?
+    
+    if [ $INSTALL_RESULT -eq 0 ]; then
+        log_success "Tools synchronized successfully"
+    else
+        log_warning "Some tools may have failed to install (exit code: $INSTALL_RESULT)"
+    fi
+else
+    log_error "Luca command not available after installation"
+    exit 1
+fi
+
+exit 0

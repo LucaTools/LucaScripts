@@ -18,6 +18,7 @@ REPOSITORY_URL="https://github.com/LucaTools/Luca"
 TOOL_DIR="$HOME/$TOOL_FOLDER"
 SHELL_HOOK_SCRIPT_PATH="$TOOL_DIR/shell_hook.sh"
 SHELL_HOOK_SCRIPT_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/HEAD/shell_hook.sh"
+POST_CHECKOUT_HOOK_PATH="$TOOL_DIR/post-checkout"
 POST_CHECKOUT_HOOK_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/HEAD/post-checkout"
 
 # =============================================================================
@@ -253,6 +254,18 @@ else
     fi
 fi
 
+# Download the post-checkout hook script to ~/.luca/ for later use
+echo "📥 Downloading post-checkout hook script..."
+curl -LSsf --output "$POST_CHECKOUT_HOOK_PATH" "$POST_CHECKOUT_HOOK_URL"
+
+POST_CHECKOUT_DOWNLOAD_SUCCESS=$?
+if [ $POST_CHECKOUT_DOWNLOAD_SUCCESS -ne 0 ]; then
+    echo "⚠️  WARNING: Could not download post-checkout hook from $POST_CHECKOUT_HOOK_URL"
+else
+    echo "✅ Post-checkout hook downloaded to $POST_CHECKOUT_HOOK_PATH"
+    chmod +x "$POST_CHECKOUT_HOOK_PATH"
+fi
+
 # =============================================================================
 # GIT POST-CHECKOUT HOOK SETUP (OPTIONAL)
 # =============================================================================
@@ -291,21 +304,21 @@ install_git_hook() {
         else
             echo "⚠️  A post-checkout hook already exists at $hook_file"
             echo "    To install Luca's hook, please manually merge or replace it."
-            echo "    The hook script content can be found at:"
-            echo "      $POST_CHECKOUT_HOOK_URL"
+            echo "    The hook script can be found at: $POST_CHECKOUT_HOOK_PATH"
             return 0
         fi
     fi
     
-    # Download and install the hook
+    # Copy from local ~/.luca/post-checkout (already downloaded earlier)
     echo "📥 Installing git post-checkout hook..."
-    if curl -LSsf --output "$hook_file" "$POST_CHECKOUT_HOOK_URL"; then
+    if [ -f "$POST_CHECKOUT_HOOK_PATH" ]; then
+        cp "$POST_CHECKOUT_HOOK_PATH" "$hook_file"
         chmod +x "$hook_file"
         echo "✅ Git post-checkout hook installed at $hook_file"
         GIT_HOOK_INSTALLED=true
         GIT_HOOK_PATH="$hook_file"
     else
-        echo "⚠️  Could not download post-checkout hook (non-fatal)"
+        echo "⚠️  Could not install post-checkout hook (source not found)"
     fi
 }
 
@@ -324,7 +337,7 @@ echo "   • Executable: $EXECUTABLE_FILE"
 echo "   • Version: $REQUIRED_EXECUTABLE_VERSION"
 echo "   • Shell Hook: $SHELL_HOOK_SCRIPT_PATH"
 if [ "$GIT_HOOK_INSTALLED" = "true" ]; then
-    echo "   • Git Hook: $GIT_HOOK_PATH"
+    echo "   • Post-checkout Hook: $POST_CHECKOUT_HOOK_PATH"
 fi
 echo ""
 echo "💡 To start using Luca:"

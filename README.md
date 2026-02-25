@@ -356,3 +356,8 @@ sequenceDiagram
 | `shell_hook.sh` | Manages PATH dynamically based on current directory | On every shell prompt (after `cd`) |
 | `post-checkout` | Syncs tools after branch switch | Automatically after `git checkout`/`git switch` |
 | `uninstall.sh` | Removes all Luca components | Manually by user |
+
+
+## License
+
+These scripts are provided under the same license as [Luca](https://github.com/LucaTools/Luca). See [LICENSE](LICENSE) for details.

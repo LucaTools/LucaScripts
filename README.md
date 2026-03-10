@@ -44,7 +44,7 @@ flowchart TB
 
     U2 --> SH
     SH --> PATH
-    PATH -->|adds/removes| .luca/active
+    PATH -->|adds/removes| .luca/tools
 
     U3 --> PC
     PC -->|may call| IS
@@ -141,22 +141,22 @@ flowchart TD
     subgraph EveryPrompt["⚡ Before Every Prompt"]
         Prompt[User presses Enter<br/>or changes directory] --> UpdatePath[update_path runs]
         
-        UpdatePath --> CheckLucaDir{".luca/active"<br/>exists in pwd?}
+        UpdatePath --> CheckLucaDir{".luca/tools"<br/>exists in pwd?}
         
         CheckLucaDir -->|Yes| CheckInPath{Already in PATH?}
         CheckLucaDir -->|No| CleanupPath
         
         CheckInPath -->|Yes| Done1[Do nothing<br/>idempotent]
-        CheckInPath -->|No| AddToPath["Add .luca/active<br/>to front of PATH"]
+        CheckInPath -->|No| AddToPath["Add .luca/tools<br/>to front of PATH"]
         
         AddToPath --> Done2[PATH updated ✅]
         
-        CleanupPath{Any .luca/active<br/>entries in PATH?}
+        CleanupPath{Any .luca/tools<br/>entries in PATH?}
         CleanupPath -->|No| Done3[Nothing to clean]
         CleanupPath -->|Yes| FilterPath
         
         FilterPath[For each PATH entry...]
-        FilterPath --> IsLucaEntry{Is .luca/active<br/>entry?}
+        FilterPath --> IsLucaEntry{Is .luca/tools<br/>entry?}
         
         IsLucaEntry -->|No| Keep[Keep in PATH]
         IsLucaEntry -->|Yes| CheckSubdir{Current dir is<br/>project or subdir?}
@@ -323,7 +323,7 @@ sequenceDiagram
     U->>T: Open new terminal
     T->>SH: Source shell_hook.sh
     SH->>SH: Register precmd hook
-    SH->>T: Check pwd for .luca/active
+    SH->>T: Check pwd for .luca/tools
 
     Note over U,L: Daily Usage - Switching Branches
     U->>G: git checkout feature-branch
@@ -337,13 +337,13 @@ sequenceDiagram
     Note over U,L: Daily Usage - Navigating Directories
     U->>T: cd ~/project
     T->>SH: precmd triggers update_path
-    SH->>SH: Add .luca/active to PATH
+    SH->>SH: Add .luca/tools to PATH
     U->>T: which <tool>
-    T-->>U: ~/project/.luca/active/<tool>
+    T-->>U: ~/project/.luca/tools/<tool>
     
     U->>T: cd ~
     T->>SH: precmd triggers update_path
-    SH->>SH: Remove .luca/active from PATH
+    SH->>SH: Remove .luca/tools from PATH
 ```
 
 ---

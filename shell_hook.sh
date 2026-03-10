@@ -35,7 +35,7 @@ TOOL_FOLDER=".luca"
 # When navigating to subdirectories of a project, it keeps the project's tool path in PATH.
 update_path() {
   # Look for the active tools directory in the current location
-  local tool_bin_dir="$(pwd)/$TOOL_FOLDER/active"
+  local tool_bin_dir="$(pwd)/$TOOL_FOLDER/tools"
   local current_pwd="$(pwd)"
 
   # Only proceed if the tool directory exists in the current directory
@@ -54,9 +54,9 @@ update_path() {
         ;;
     esac
   else
-    # Current directory doesn't have .luca/active
-    # Check if there are any .luca/active entries in PATH that should be cleaned up
-    if [[ ":$PATH:" == *"/$TOOL_FOLDER/active:"* ]]; then
+    # Current directory doesn't have .luca/tools
+    # Check if there are any .luca/tools entries in PATH that should be cleaned up
+    if [[ ":$PATH:" == *"/$TOOL_FOLDER/tools:"* ]]; then
       local p
       local new_path=""
       local current_path="$PATH"
@@ -70,10 +70,10 @@ update_path() {
             current_path="${current_path#*:}"
         fi
 
-        if [[ "$p" == *"/$TOOL_FOLDER/active" ]]; then
+        if [[ "$p" == *"/$TOOL_FOLDER/tools" ]]; then
           # This is a tool directory entry - check if we should keep it
-          # Get the project root (parent of .luca/active)
-          local project_root="${p%/$TOOL_FOLDER/active}"
+          # Get the project root (parent of .luca/tools)
+          local project_root="${p%/$TOOL_FOLDER/tools}"
           # Keep this entry if current directory is the project root or a subdirectory of it
           if [[ "$current_pwd" == "$project_root" || "$current_pwd" == "$project_root/"* ]]; then
             new_path="${new_path:+$new_path:}$p"

@@ -22,6 +22,19 @@ POST_CHECKOUT_HOOK_PATH="$TOOL_DIR/post-checkout"
 POST_CHECKOUT_HOOK_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/HEAD/post-checkout"
 
 # =============================================================================
+# GITHUB API AUTHENTICATION
+# =============================================================================
+
+# Build curl options for GitHub API requests.
+# If GITHUB_TOKEN is set, include it as a Bearer token to avoid rate limiting
+# (5000 req/hr authenticated vs. 60 req/hr unauthenticated).
+CURL_GITHUB_API_OPTS=()
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+    CURL_GITHUB_API_OPTS=(-H "Authorization: Bearer $GITHUB_TOKEN")
+    echo "Using GITHUB_TOKEN for authenticated GitHub API requests"
+fi
+
+# =============================================================================
 # TOOL VERSION DETECTION
 # =============================================================================
 
@@ -29,7 +42,7 @@ POST_CHECKOUT_HOOK_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/
 if [ ! -f "$VERSION_FILE" ]; then
     echo "Missing $VERSION_FILE. Fetching the latest version"
     # Fetch latest release version from GitHub API
-    REQUIRED_EXECUTABLE_VERSION=$(curl -LSsf "https://api.github.com/repos/$ORGANIZATION/$TOOL_NAME/releases/latest" | grep '"tag_name":' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+    REQUIRED_EXECUTABLE_VERSION=$(curl -LSsf "${CURL_GITHUB_API_OPTS[@]}" "https://api.github.com/repos/$ORGANIZATION/$TOOL_NAME/releases/latest" | grep '"tag_name":' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
     
     if [ -z "$REQUIRED_EXECUTABLE_VERSION" ]; then
         echo "ERROR: Could not fetch latest version from $REPOSITORY_URL"
@@ -158,7 +171,6 @@ fi
 echo "📥 Downloading $TOOL_NAME ($REQUIRED_EXECUTABLE_VERSION)..."
 
 # Download the appropriate version for the detected OS
-# Use the updated URL pointing to the new S3 bucket
 curl -LSsf --output "./$TEMP_EXECUTABLE_ZIP_FILENAME" \
     "$REPOSITORY_URL/releases/download/$REQUIRED_EXECUTABLE_VERSION/$TEMP_EXECUTABLE_ZIP_FILENAME"
 

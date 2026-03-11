@@ -182,35 +182,41 @@ What happens when you switch branches in a Luca-enabled repository.
 ```mermaid
 flowchart TD
     Start([Git checkout/switch<br/>triggers hook]) --> CheckType{Checkout type?}
-    
+
     CheckType -->|"File checkout (0)"| Exit1([Exit: skip file checkouts])
     CheckType -->|"Branch checkout (1)"| Continue[Continue processing]
-    
+
     Continue --> FindRoot[Find git repo root]
     FindRoot --> CheckLucafile{Lucafile exists<br/>in repo root?}
-    
+
     CheckLucafile -->|No| Exit2([Exit: no Lucafile])
     CheckLucafile -->|Yes| CheckLuca{luca command<br/>available?}
-    
-    CheckLuca -->|No| InstallLuca[Download & run<br/>install.sh]
-    CheckLuca -->|Yes| RunInstall
-    
-    InstallLuca --> CheckInstallResult{Install<br/>successful?}
+
+    CheckLuca -->|No| LogNotFound["Log: not found, installing"]
+    CheckLuca -->|Yes| CheckVersion{".luca-version"<br/>matches installed?}
+
+    CheckVersion -->|Yes or no file| RunInstall
+    CheckVersion -->|No| LogMismatch["Log: version mismatch<br/>(installed vs required)"]
+
+    LogNotFound --> Download[Download & run<br/>install.sh]
+    LogMismatch --> Download
+
+    Download --> CheckInstallResult{Install<br/>successful?}
     CheckInstallResult -->|No| ErrorExit([❌ Exit: install failed])
     CheckInstallResult -->|Yes| RunInstall
-    
+
     RunInstall["Run:<br/>luca install"]
     RunInstall --> CheckResult{Install<br/>successful?}
-    
+
     CheckResult -->|Yes| Success[✅ Tools synchronized]
     CheckResult -->|No| Warning[⚠️ Some tools may<br/>have failed]
-    
+
     Success --> NotifyPath
     Warning --> NotifyPath
-    
+
     NotifyPath["ℹ️ PATH will update<br/>on next prompt"]
     NotifyPath --> Exit3([Exit: done])
-    
+
     style Exit1 fill:#FFE4B5
     style Exit2 fill:#FFE4B5
     style ErrorExit fill:#FFB6C1
@@ -329,6 +335,9 @@ sequenceDiagram
     U->>G: git checkout feature-branch
     G->>PC: Trigger post-checkout
     PC->>PC: Check for Lucafile
+    PC->>PC: Check luca version vs .luca-version
+    PC->>IS: Run install.sh if missing or version mismatch
+    IS-->>PC: Done
     PC->>L: luca install --quiet
     L->>L: Install/update tools
     L-->>PC: Done

@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Mock curl - behavior controlled by MOCK_CURL_BEHAVIOR and URL pattern
+
+# Parse arguments: find --output path and URL
+output_path=""
+url=""
+prev_arg=""
+for arg in "$@"; do
+    if [ "$prev_arg" = "--output" ] || [ "$prev_arg" = "-o" ]; then
+        output_path="$arg"
+    fi
+    case "$arg" in
+        http://*|https://*)
+            url="$arg"
+            ;;
+    esac
+    prev_arg="$arg"
+done
+
+# Log this invocation
+echo "curl $url" >> "${MOCK_CALL_LOG:-/dev/null}"
+
+behavior="${MOCK_CURL_BEHAVIOR:-auto}"
+
+# Handle explicit forced failures first
+case "$behavior" in
+    api_fail)
+        exit 1
+        ;;
+    api_empty)
+        if [[ "$url" == *"releases/latest"* ]]; then
+            echo "{}"
+            exit 0
+        fi
+        ;;
+    download_fail)
+        if [[ "$url" == *"releases/download"* ]]; then
+            exit 1
+        fi
+        ;;
+    shell_hook_fail)
+        if [[ "$url" == *"shell_hook.sh"* ]]; then
+            exit 1
+        fi
+        ;;
+    post_checkout_fail)
+        if [[ "$url" == *"post-checkout"* ]]; then
+            exit 1
+        fi
+        ;;
+esac
+
+# Auto behavior based on URL pattern
+if [[ "$url" == *"releases/latest"* ]]; then
+    # GitHub API: return fixture JSON
+    if [ -n "${FIXTURE_DIR:-}" ] && [ -f "$FIXTURE_DIR/api_response_latest.json" ]; then
+        cat "$FIXTURE_DIR/api_response_latest.json"
+    else
+        echo '{"tag_name": "v2.0.0"}'
+    fi
+    exit 0
+
+elif [[ "$url" == *"releases/download"* ]]; then
+    # Binary download: create a placeholder zip
+    if [ -n "$output_path" ]; then
+        touch "$output_path"
+    fi
+    exit 0
+
+elif [[ "$url" == *"shell_hook.sh"* ]]; then
+    # shell_hook.sh download: write a minimal valid bash script
+    if [ -n "$output_path" ]; then
+        cat > "$output_path" << 'MOCK_SHELL_HOOK'
+#!/usr/bin/env bash
+TOOL_FOLDER=".luca"
+
+install_shell_hook() {
+    local shell_rc_file
+    local hook_line="[[ -s \"\$HOME/$TOOL_FOLDER/shell_hook.sh\" ]] && source \"\$HOME/$TOOL_FOLDER/shell_hook.sh\""
+    case "$SHELL" in
+        */bash) shell_rc_file="$HOME/.bashrc" ;;
+        */zsh)  shell_rc_file="$HOME/.zshrc"  ;;
+        *)      return 1 ;;
+    esac
+    touch "$shell_rc_file"
+    if ! grep -Fxq "$hook_line" "$shell_rc_file" 2>/dev/null; then
+        {
+            echo ""
+            echo "# Initialize Luca shell hook (added by Luca installer)"
+            echo "$hook_line"
+        } >> "$shell_rc_file"
+    fi
+}
+
+update_path() { return 0; }
+
+if [[ -n "$BASH_VERSION" && "${BASH_SOURCE[0]}" != "$0" ]] || \
+   [[ -n "$ZSH_VERSION" && "${ZSH_EVAL_CONTEXT}" == *:file:* ]]; then
+    install_shell_hook
+    update_path
+fi
+MOCK_SHELL_HOOK
+        chmod +x "$output_path"
+    fi
+    exit 0
+
+elif [[ "$url" == *"post-checkout"* ]] || [[ "$url" == *"install.sh"* ]]; then
+    # post-checkout or install script download: write a minimal no-op
+    if [ -n "$output_path" ]; then
+        printf '#!/bin/sh\n# mock script\nexit 0\n' > "$output_path"
+        chmod +x "$output_path"
+    fi
+    exit 0
+fi
+
+exit 0

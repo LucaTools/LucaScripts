@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Mock unzip - creates a fake Luca binary in the current directory
+
+echo "unzip $*" >> "${MOCK_CALL_LOG:-/dev/null}"
+
+case "${MOCK_UNZIP_BEHAVIOR:-success}" in
+    success)
+        # Create a fake Luca executable (install.sh looks for ./Luca)
+        printf '#!/usr/bin/env bash\necho "%s"\n' "${MOCK_LUCA_VERSION:-v2.0.0}" > "./Luca"
+        chmod +x "./Luca"
+        exit 0
+        ;;
+    fail)
+        echo "unzip: cannot extract" >&2
+        exit 1
+        ;;
+esac

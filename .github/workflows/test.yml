@@ -1,0 +1,42 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: BATS Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats-core (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y bats
+
+      - name: Install bats-core (macOS)
+        if: runner.os == 'macOS'
+        run: brew install bats-core
+
+      - name: Install bats helper libraries
+        run: |
+          git clone --depth 1 https://github.com/bats-core/bats-support.git \
+            tests/test_helper/bats-support
+          git clone --depth 1 https://github.com/bats-core/bats-assert.git \
+            tests/test_helper/bats-assert
+
+      - name: Make scripts and mocks executable
+        run: |
+          chmod +x install.sh uninstall.sh shell_hook.sh post-checkout
+          chmod +x tests/test_helper/mocks/*
+
+      - name: Run tests
+        run: bats --tap tests/*.bats

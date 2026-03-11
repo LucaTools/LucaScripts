@@ -10,7 +10,7 @@
 
 TOOL_NAME="Luca"
 BIN_NAME="luca"
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 TOOL_FOLDER=".luca"
 VERSION_FILE="${PWD}/.luca-version"
 ORGANIZATION="LucaTools"

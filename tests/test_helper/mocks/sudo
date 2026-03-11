@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Mock sudo - logs call and executes the command as current user
+
+echo "sudo $*" >> "${MOCK_SUDO_SENTINEL:-/dev/null}"
+"$@"

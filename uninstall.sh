@@ -8,7 +8,7 @@
 # =============================================================================
 
 TOOL_NAME="Luca"
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 TOOL_FOLDER=".luca"
 TOOL_DIR="$HOME/$TOOL_FOLDER"
 SHELL_HOOK_SCRIPT_PATH="$TOOL_DIR/shell_hook.sh"

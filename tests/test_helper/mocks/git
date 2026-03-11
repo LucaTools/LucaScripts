@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Mock git - controlled by MOCK_GIT_REPO_ROOT
+
+echo "git $*" >> "${MOCK_CALL_LOG:-/dev/null}"
+
+# Handle rev-parse --show-toplevel
+if [ "$1" = "rev-parse" ] && [ "$2" = "--show-toplevel" ]; then
+    if [ -n "${MOCK_GIT_REPO_ROOT:-}" ]; then
+        echo "$MOCK_GIT_REPO_ROOT"
+        exit 0
+    else
+        echo "fatal: not a git repository (or any of the parent directories): .git" >&2
+        exit 128
+    fi
+fi
+
+exit 0

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Mock luca - controlled by MOCK_LUCA_VERSION and MOCK_LUCA_INSTALL_EXIT_CODE
+
+echo "luca $*" >> "${MOCK_LUCA_CALL_LOG:-/dev/null}"
+
+case "${1:-}" in
+    --version)
+        echo "${MOCK_LUCA_VERSION:-v1.0.0}"
+        exit 0
+        ;;
+    install)
+        exit "${MOCK_LUCA_INSTALL_EXIT_CODE:-0}"
+        ;;
+    *)
+        exit 0
+        ;;
+esac

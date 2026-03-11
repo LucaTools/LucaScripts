@@ -1,0 +1,4 @@
+export PATH="$PATH:/usr/local/bin"
+
+# Initialize Luca shell hook (added by Luca installer)
+[[ -s "$HOME/.luca/shell_hook.sh" ]] && source "$HOME/.luca/shell_hook.sh"

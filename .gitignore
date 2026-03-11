@@ -1,0 +1,5 @@
+# bats helper libraries (cloned at CI time, not committed)
+tests/test_helper/bats-support/
+tests/test_helper/bats-assert/
+
+.DS_Store

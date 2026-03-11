@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Mock uname - returns MOCK_UNAME_OUTPUT (default: Darwin)
+
+echo "${MOCK_UNAME_OUTPUT:-Darwin}"

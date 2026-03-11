@@ -126,3 +126,39 @@ setup() {
     assert_success
     assert_output --partial "Some tools may have failed"
 }
+
+# ---------------------------------------------------------------------------
+# Luca version check
+# ---------------------------------------------------------------------------
+
+@test "version check: luca version matches .luca-version, curl NOT called to reinstall" {
+    cp "$FIXTURE_DIR/Lucafile" "$FAKE_REPO/Lucafile"
+    echo "v1.0.0" > "$FAKE_REPO/.luca-version"  # matches MOCK_LUCA_VERSION default
+
+    run "$REPO_ROOT/post-checkout" prev_ref new_ref 1
+
+    assert_success
+    refute_output --partial "mismatch"
+    refute_output --partial "installing"
+}
+
+@test "version check: luca version mismatch triggers reinstall with mismatch message" {
+    cp "$FIXTURE_DIR/Lucafile" "$FAKE_REPO/Lucafile"
+    echo "v2.0.0" > "$FAKE_REPO/.luca-version"  # differs from MOCK_LUCA_VERSION (v1.0.0)
+
+    run "$REPO_ROOT/post-checkout" prev_ref new_ref 1
+
+    assert_output --partial "version mismatch"
+    assert_output --partial "v1.0.0"
+    assert_output --partial "v2.0.0"
+}
+
+@test "version check: no .luca-version file skips version check" {
+    cp "$FIXTURE_DIR/Lucafile" "$FAKE_REPO/Lucafile"
+    # No .luca-version file created
+
+    run "$REPO_ROOT/post-checkout" prev_ref new_ref 1
+
+    assert_success
+    refute_output --partial "mismatch"
+}

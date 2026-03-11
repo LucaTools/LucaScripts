@@ -69,6 +69,16 @@ is_luca_installed() {
     command -v luca >/dev/null 2>&1
 }
 
+# Check if installed luca version matches .luca-version file
+is_luca_version_correct() {
+    if [ ! -f "$VERSION_FILE" ]; then
+        return 0  # no version file, nothing to check
+    fi
+    REQUIRED_VERSION=$(cat "$VERSION_FILE")
+    INSTALLED_VERSION=$(luca --version 2>/dev/null)
+    [ "$INSTALLED_VERSION" = "$REQUIRED_VERSION" ]
+}
+
 # =============================================================================
 # MAIN HOOK LOGIC
 # =============================================================================
@@ -95,6 +105,7 @@ if [ -z "$REPO_ROOT" ]; then
     exit 0
 fi
 
+VERSION_FILE="$REPO_ROOT/.luca-version"
 LUCAFILE_PATH="$REPO_ROOT/$LUCAFILE"
 
 # Only proceed if Lucafile exists
@@ -109,19 +120,25 @@ log_info "Found $LUCAFILE, synchronizing tools..."
 # LUCA INSTALLATION CHECK
 # =============================================================================
 
-# Check if Luca is installed, install if not
-if ! is_luca_installed; then
-    log_info "Luca not found, installing..."
-    
+# Check if Luca is installed and version is correct, install/update if not
+if ! is_luca_installed || ! is_luca_version_correct; then
+    if ! is_luca_installed; then
+        log_info "Luca not found, installing..."
+    else
+        REQUIRED=$(cat "$VERSION_FILE")
+        INSTALLED=$(luca --version 2>/dev/null)
+        log_info "Luca version mismatch (installed: $INSTALLED, required: $REQUIRED), updating..."
+    fi
+
     if command -v curl >/dev/null 2>&1; then
         /bin/bash -c "$(curl -fsSL $INSTALL_SCRIPT_URL)"
         INSTALL_RESULT=$?
-        
+
         if [ $INSTALL_RESULT -ne 0 ]; then
             log_error "Failed to install Luca"
             exit 1
         fi
-        
+
         log_success "Luca installed"
     else
         log_error "curl is required to install Luca"

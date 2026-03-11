@@ -39,8 +39,8 @@ setup() {
         source '$REPO_ROOT/shell_hook.sh' >/dev/null 2>&1
         update_path
         update_path
-        # Count occurrences of the tools dir in PATH
-        echo \"\$PATH\" | tr ':' '\n' | grep -c '\.luca/tools' || echo 0
+        # Count occurrences of the specific tools dir in PATH
+        echo \"\$PATH\" | tr ':' '\n' | grep -cxF '$project/.luca/tools' || echo 0
     "
 
     assert_output "1"

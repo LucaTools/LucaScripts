@@ -25,6 +25,8 @@ POST_CHECKOUT_HOOK_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/
 # GITHUB API AUTHENTICATION
 # =============================================================================
 
+trap 'printf "\n❌ Installation interrupted.\n"; exit 130' INT
+
 # Build curl options for GitHub API requests.
 # If GITHUB_TOKEN is set, include it as a Bearer token to avoid rate limiting
 # (5000 req/hr authenticated vs. 60 req/hr unauthenticated).

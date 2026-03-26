@@ -25,6 +25,8 @@ POST_CHECKOUT_HOOK_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/
 # GITHUB API AUTHENTICATION
 # =============================================================================
 
+trap 'printf "\n❌ Installation interrupted.\n"; exit 130' INT
+
 # Build curl options for GitHub API requests.
 # If GITHUB_TOKEN is set, include it as a Bearer token to avoid rate limiting
 # (5000 req/hr authenticated vs. 60 req/hr unauthenticated).
@@ -210,6 +212,7 @@ echo "🧹 Cleaned up temporary files"
 # This checks if the install directory is writable before using sudo
 sudo_if_install_dir_not_writeable() {
     local command="$1"
+    local exit_code
     if [ -w "$INSTALL_DIR" ]; then
         # Directory is writable, run without sudo
         sh -c "$command"
@@ -217,6 +220,11 @@ sudo_if_install_dir_not_writeable() {
         # Directory requires elevated privileges
         echo "🔐 Administrator privileges required for installation to $INSTALL_DIR"
         sudo sh -c "$command"
+    fi
+    exit_code=$?
+    if [ "$exit_code" -ne 0 ]; then
+        echo "❌ ERROR: Command failed or was interrupted (exit code: $exit_code)"
+        exit "$exit_code"
     fi
 }
 

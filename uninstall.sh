@@ -8,11 +8,19 @@
 # =============================================================================
 
 TOOL_NAME="Luca"
+BIN_NAME="luca"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 TOOL_FOLDER=".luca"
 TOOL_DIR="$HOME/$TOOL_FOLDER"
 SHELL_HOOK_SCRIPT_PATH="$TOOL_DIR/shell_hook.sh"
-EXECUTABLE_FILE="$INSTALL_DIR/$TOOL_NAME"
+# The binary may be installed as 'luca' (lowercase) or 'Luca' (uppercase) depending on the version
+if [ -f "$INSTALL_DIR/$BIN_NAME" ]; then
+    EXECUTABLE_FILE="$INSTALL_DIR/$BIN_NAME"
+elif [ -f "$INSTALL_DIR/$TOOL_NAME" ]; then
+    EXECUTABLE_FILE="$INSTALL_DIR/$TOOL_NAME"
+else
+    EXECUTABLE_FILE="$INSTALL_DIR/$BIN_NAME"
+fi
 
 # =============================================================================
 # TERMINAL COLORS

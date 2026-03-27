@@ -235,8 +235,17 @@ if [ ! -d "$INSTALL_DIR" ]; then
 fi
 
 # Move the executable to the install directory and make it executable
+# The zip may contain either 'Luca' (uppercase) or 'luca' (lowercase) depending on the release
 echo "🚀 Installing $TOOL_NAME to $INSTALL_DIR..."
-sudo_if_install_dir_not_writeable "mv $TOOL_NAME $EXECUTABLE_FILE"
+if [ -f "$TOOL_NAME" ]; then
+    EXTRACTED_BIN="$TOOL_NAME"
+elif [ -f "$BIN_NAME" ]; then
+    EXTRACTED_BIN="$BIN_NAME"
+else
+    echo "❌ ERROR: Could not find extracted binary (expected '$TOOL_NAME' or '$BIN_NAME')"
+    exit 1
+fi
+sudo_if_install_dir_not_writeable "mv $EXTRACTED_BIN $EXECUTABLE_FILE"
 sudo_if_install_dir_not_writeable "chmod +x $EXECUTABLE_FILE"
 
 echo "✅ $TOOL_NAME ($REQUIRED_EXECUTABLE_VERSION) successfully installed to $INSTALL_DIR"

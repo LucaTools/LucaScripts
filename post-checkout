@@ -164,7 +164,7 @@ cd "$REPO_ROOT" || exit 1
 
 # Install tools specified in the spec file
 if is_luca_installed; then
-    luca install --quiet
+    luca install --quiet --no-install-post-checkout-git-hook
     INSTALL_RESULT=$?
     
     if [ $INSTALL_RESULT -eq 0 ]; then

@@ -24,7 +24,7 @@
 # Configuration
 TOOL_NAME="Luca"
 TOOL_FOLDER=".luca"
-LUCAFILE="Lucafile"
+SPEC_NAMES="Lucafile Lucafile.yml Toolfile Toolfile.yml Skillfile Skillfile.yml"
 INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/LucaTools/LucaScripts/HEAD/install.sh"
 
 # =============================================================================
@@ -106,15 +106,22 @@ if [ -z "$REPO_ROOT" ]; then
 fi
 
 VERSION_FILE="$REPO_ROOT/.luca-version"
-LUCAFILE_PATH="$REPO_ROOT/$LUCAFILE"
 
-# Only proceed if Lucafile exists
-if [ ! -f "$LUCAFILE_PATH" ]; then
-    # No Lucafile in this repository, nothing to do
+# Only proceed if a recognised spec file exists
+FOUND_SPEC=""
+for name in $SPEC_NAMES; do
+    if [ -f "$REPO_ROOT/$name" ]; then
+        FOUND_SPEC="$name"
+        break
+    fi
+done
+
+if [ -z "$FOUND_SPEC" ]; then
+    # No spec file in this repository, nothing to do
     exit 0
 fi
 
-log_info "Found $LUCAFILE, synchronizing tools..."
+log_info "Found $FOUND_SPEC, synchronizing tools..."
 
 # =============================================================================
 # LUCA INSTALLATION CHECK
@@ -150,14 +157,14 @@ fi
 # TOOL INSTALLATION FROM LUCAFILE
 # =============================================================================
 
-log_info "Installing CLI tools from $LUCAFILE..."
+log_info "Installing CLI tools from $FOUND_SPEC..."
 
 # Change to repo root to ensure correct context
 cd "$REPO_ROOT" || exit 1
 
-# Install tools specified in Lucafile
+# Install tools specified in the spec file
 if is_luca_installed; then
-    luca install --quiet --spec "$LUCAFILE"
+    luca install --quiet
     INSTALL_RESULT=$?
     
     if [ $INSTALL_RESULT -eq 0 ]; then

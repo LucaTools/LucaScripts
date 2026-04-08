@@ -113,7 +113,7 @@ setup() {
 
     assert_success
     assert_output --partial "Tools synchronized successfully"
-    run grep "luca install --quiet --spec Lucafile" "$MOCK_LUCA_CALL_LOG"
+    run grep "luca install --quiet" "$MOCK_LUCA_CALL_LOG"
     assert_success
 }
 
